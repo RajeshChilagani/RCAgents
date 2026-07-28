@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Hair Care & Density Routine Planner</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --danger: #f43f5e;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    p.subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      background-color: var(--accent);
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+      color: #fff;
+    }
+
+    button.btn-reset {
+      background-color: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    button.btn-reset:hover {
+      background-color: var(--border);
+      color: var(--text);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background-color: var(--card-bg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background-color: #0f172a;
+      padding: 14px 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .day-cell {
+      font-weight: 700;
+      color: var(--accent);
+      width: 100px;
+    }
+
+    .cell-input {
+      width: 100%;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      resize: vertical;
+      outline: none;
+    }
+
+    .cell-input:focus, .cell-input:hover {
+      background-color: #0f172a;
+      border-color: var(--border);
+    }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .task-item:last-child {
+      margin-bottom: 0;
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--accent);
+      margin-top: 3px;
+      cursor: pointer;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .badge-warn {
+      background-color: rgba(244, 63, 94, 0.2);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+
+    .badge-info {
+      background-color: rgba(56, 189, 248, 0.2);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div>
+        <h1>Hair Growth & Density Routine Planner</h1>
+        <p class="subtitle">Click any item to edit text, or check off tasks as you complete them.</p>
+      </div>
+      <div class="controls">
+        <button onclick="saveRoutine()">Save Changes</button>
+        <button class="btn-reset" onclick="resetDefaults()">Reset Schedule</button>
+      </div>
+    </header>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Morning Topicals</th>
+            <th>Evening Topicals</th>
+            <th>Daily Oral Supplements</th>
+          </tr>
+        </thead>
+        <tbody id="routine-body">
+          </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const defaultRoutine = [
+      {
+        day: "Sunday",
+        morning: "Wash with Caffeine Shampoo",
+        evening: "Derma Stamp (0.75mm–1.0mm) → NO Topicals after",
+        oral: "Take daily DHT blocker + Vit D3/K2/Iron/B12",
+        badge: "No topicals post-stamp"
+      },
+      {
+        day: "Monday",
+        morning: "Rest (24hr post-stamp healing window)",
+        evening: "Peptide Serum (No Minoxidil / Tretinoin)",
+        oral: "Take daily DHT blocker + Vit D3/K2/Iron/B12",
+        badge: "Healing Window"
+      },
+      {
+        day: "Tuesday",
+        morning: "Minoxidil 5%",
+        evening: "Minoxidil 5% + Tretinoin",
+        oral: "Take daily DHT blocker + Vit D3/K2/Iron/B12",
+        badge: ""
+      },
+      {
+        day: "Wednesday",
+        morning: "Caffeine Shampoo + Scalp Massage",
+        evening: "Peptide Serum (No Minoxidil / Tretinoin)",
+        oral: "Take daily DHT blocker + Vit D3/K2/Iron/B12",
+        badge: ""
+      },
+      {
+        day: "Thursday",
+        morning: "Minoxidil 5%",
+        evening: "Minoxidil 5% + Tretinoin",
+        oral: "Take daily DHT blocker + Vit D3/K2/Iron/B12",
+        badge: ""
+      },
+      {
+        day: "Friday",
+        morning: "Minoxidil 5%",
+        evening: "Peptide Serum (No Minoxidil / Tretinoin)",
+        oral: "Take daily DHT blocker + Vit D3/K2/Iron/B12",
+        badge: ""
+      },
+      {
+        day: "Saturday",
+        morning: "Minoxidil 5%",
+        evening: "Minoxidil 5% + Tretinoin",
+        oral: "Take daily DHT blocker + Vit D3/K2/Iron/B12",
+        badge: ""
+      }
+    ];
+
+    function renderRoutine(data) {
+      const tbody = document.getElementById("routine-body");
+      tbody.innerHTML = "";
+
+      data.forEach((row, index) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="day-cell">
+            ${row.day}
+            ${row.badge ? `<br><span class="badge ${row.badge.includes('No topicals') ? 'badge-warn' : 'badge-info'}">${row.badge}</span>` : ''}
+          </td>
+          <td>
+            <div class="task-item">
+              <input type="checkbox" id="m-${index}">
+              <textarea class="cell-input" rows="2" id="input-m-${index}">${row.morning}</textarea>
+            </div>
+          </td>
+          <td>
+            <div class="task-item">
+              <input type="checkbox" id="e-${index}">
+              <textarea class="cell-input" rows="2" id="input-e-${index}">${row.evening}</textarea>
+            </div>
+          </td>
+          <td>
+            <div class="task-item">
+              <input type="checkbox" id="o-${index}">
+              <textarea class="cell-input" rows="2" id="input-o-${index}">${row.oral}</textarea>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function saveRoutine() {
+      const updated = defaultRoutine.map((item, index) => {
+        return {
+          ...item,
+          morning: document.getElementById(`input-m-${index}`).value,
+          evening: document.getElementById(`input-e-${index}`).value,
+          oral: document.getElementById(`input-o-${index}`).value
+        };
+      });
+      localStorage.setItem("customHairRoutine", JSON.stringify(updated));
+      alert("Routine saved successfully!");
+    }
+
+    function resetDefaults() {
+      if (confirm("Reset to default schedule?")) {
+        localStorage.removeItem("customHairRoutine");
+        renderRoutine(defaultRoutine);
+      }
+    }
+
+    // Load saved or default on startup
+    const saved = localStorage.getItem("customHairRoutine");
+    renderRoutine(saved ? JSON.parse(saved) : defaultRoutine);
+  </script>
+</body>
+</html>
